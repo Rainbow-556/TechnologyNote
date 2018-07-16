@@ -1,0 +1,1 @@
+参考：https://developer.android.com/guide/components/processes-and-threads?hl=zh-cn

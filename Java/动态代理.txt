@@ -1,0 +1,56 @@
+Public class TimeConsumeProxy implements InvocationHandler {
+	// 真实的委托类对象，最终的调用都会在该对象上调用
+	private Object realObject;
+	public Object bind(Object realObject) {
+		this.realObject = realObject;
+		Object proxyObject = Proxy.newInstance(
+			realObject.getClass().getClassLoader(), /*委托类的类加载器*/
+			realObject.getClass().getInterfaces(), /*委托类如果本身是接口，或者继承了某些接口，则会返回一个接口数组*/
+			this /*InvocationHandler*/
+		);
+		// proxyObject对象为动态生成的代理对象，它实现了realObject.getClass().getInterfaces()中的所有接口
+		return proxyObject;
+	}
+	
+	// 重写InvocationHandler接口的方法，用于把对代理类对象的调用转发到委托类对象上
+	@Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        long start = System.currentMillions();
+		// 通过反射调用委托类对象的方法
+        Object result = method.invoke(realObject, args);
+        System.out.println("耗时：" + (System.currentMillions() - start));
+        return result;
+    }
+}
+
+实现原理：
+动态代理就是为委托类动态生成了一个$Proxy0.class的代理类对象，该代理类实现了委托类的所有接口，并把接口调用都转发到InvocationHandler.invoke()方法中，
+最终通过反射在委托类上调用
+动态创建代理类对象原理：根据委托类的接口，动态生成字节码内容，最后根据字节码和类名生成Class对象，用Class对象创建该实例
+再来看 getProxyClass0 的具体实现：ProxyClassFactory工厂类：
+@Override
+public Class<?> apply(ClassLoader loader, Class<?>[] interfaces) {
+	// 参数为 ClassLoader 和要代理的接口
+	Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.length);
+	// 1. 验证 ClassLoader 和接口有效性
+	for (Class<?> intf : interfaces) {
+		// 验证 classLoader 正确性
+		Class<?> interfaceClass = Class.forName(intf.getName(), false, loader);
+		if (interfaceClass != intf) {
+            throw new IllegalArgumentException(
+                intf + " is not visible from class loader");
+        }
+		// 验证传入的接口 class 有效
+		if (!interfaceClass.isInterface()) { ... } 
+		// 验证接口是否重复
+		if (interfaceSet.put(interfaceClass, Boolean.TRUE) != null) { ... }
+	}
+	// 2. 创建包名及类名 $Proxy0.class
+	proxyPkg = ReflectUtil.PROXY_PACKAGE + ".";
+	long num = nextUniqueNumber.getAndIncrement();
+    String proxyName = proxyPkg + proxyClassNamePrefix + num;
+    // 3. 创建 class 字节码内容
+    byte[] proxyClassFile = ProxyGenerator.generateProxyClass(proxyName, interfaces, accessFlags);
+    // 4. 基于字节码和类名，生成 Class<?> 对象
+    return defineClass0(loader, proxyName, proxyClassFile, 0, proxyClassFile.length);
+}

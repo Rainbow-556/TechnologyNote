@@ -1,0 +1,9 @@
+电话面试(基本上是根据简历来提问，最后肯定有个算法题) - 2018.6.25
+1、为什么选择Glide？Glide的优势、缓存原理
+2、LruCache原理，LinkedHashMap原理
+3、Animation和ValueAnimator的原理
+4、自定义View和动画的优化
+5、App启动速度优化
+6、JS与原生通信的几种方式
+7、浏览器中打开一个url发生了什么，Http协议
+8、二叉树的广度遍历(使用队列可以实现)
