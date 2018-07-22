@@ -1,3 +1,0 @@
-在Activity里调用getSharedPreferenced()最终会调用ContextImpl的方法里去，会去异步加载把xml文件加载到内存，并使用一个Map保存fileName和SharedPreferencesImpl对象缓存起来，
-在xml文件未加载完成之前，中途对该SP进行操作都会SharedPreferencesImpl阻塞，直到加载完毕
-每次调用
